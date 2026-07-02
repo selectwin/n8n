@@ -1,0 +1,54 @@
+{
+  "name": "n8n-nodes-selectwin",
+  "version": "0.1.0",
+  "description": "n8n community node for Selectwin — payments (PIX, card, boleto), customers, products, payment links, subscriptions and webhooks.",
+  "keywords": [
+    "n8n-community-node-package",
+    "selectwin",
+    "payments",
+    "pix",
+    "boleto",
+    "webhooks"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Selectwin",
+    "email": "dev@selectwin.io"
+  },
+  "homepage": "https://selectwin.io/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/selectwin/n8n.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/SelectwinApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Selectwin/Selectwin.node.js",
+      "dist/nodes/SelectwinTrigger/SelectwinTrigger.node.js"
+    ]
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "n8n-workflow": "^1.70.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
