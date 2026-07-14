@@ -8,3 +8,7 @@
 .env*.local
 .DS_Store
 *.log
+
+# e2e (tarball is rebuilt by `npm pack`; see e2e/README.md)
+/e2e/n8n/plugin.tgz
+

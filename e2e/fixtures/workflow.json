@@ -1,0 +1,43 @@
+[
+  {
+    "id": "SwE2EWorkflow001",
+    "name": "Selectwin Trigger E2E",
+    "active": false,
+    "nodes": [
+      {
+        "id": "0f0f0f0f-1111-4222-8333-444455556666",
+        "name": "Selectwin Trigger",
+        "type": "n8n-nodes-selectwin.selectwinTrigger",
+        "typeVersion": 1,
+        "position": [0, 0],
+        "webhookId": "aaaabbbb-cccc-4ddd-8eee-ffff00001111",
+        "parameters": {
+          "events": ["transaction.approved", "webhook.ping"]
+        },
+        "credentials": {
+          "selectwinApi": { "id": "SwE2ECredential1", "name": "Selectwin (mock e2e)" }
+        }
+      },
+      {
+        "id": "1a1a1a1a-2222-4333-8444-555566667777",
+        "name": "Echo",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [240, 0],
+        "parameters": {
+          "method": "POST",
+          "url": "http://mock-api:3999/_mock/echo",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify($json) }}"
+        }
+      }
+    ],
+    "connections": {
+      "Selectwin Trigger": {
+        "main": [[{ "node": "Echo", "type": "main", "index": 0 }]]
+      }
+    },
+    "settings": {}
+  }
+]

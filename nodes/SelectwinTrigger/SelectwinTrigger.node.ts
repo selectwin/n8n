@@ -9,6 +9,7 @@ import type {
 	IWebhookResponseData,
 	NodeConnectionType,
 } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import { verifySelectwinSignature } from './verify';
 
@@ -92,6 +93,33 @@ async function getBaseUrl(this: IHookFunctions): Promise<string> {
 	const credentials = await this.getCredentials('selectwinApi');
 	const baseUrl = (credentials.baseUrl as string) || 'https://api.selectwin.io';
 	return baseUrl.replace(/\/+$/, '');
+}
+
+/**
+ * Pull the Selectwin error-envelope message (`{ error: { message } }`) out of
+ * a failed n8n http request, whatever layer it surfaces on. Without this, a
+ * 400 from the API reaches the user as the opaque n8n default
+ * "Bad request - please check your parameters".
+ */
+export function extractApiErrorMessage(error: unknown): string | undefined {
+	const candidate = error as {
+		cause?: { response?: { data?: unknown; body?: unknown } };
+		response?: { data?: unknown; body?: unknown };
+	};
+	let body =
+		candidate?.cause?.response?.data ??
+		candidate?.cause?.response?.body ??
+		candidate?.response?.data ??
+		candidate?.response?.body;
+	if (typeof body === 'string') {
+		try {
+			body = JSON.parse(body);
+		} catch {
+			return undefined;
+		}
+	}
+	const message = (body as { error?: { message?: unknown } } | undefined)?.error?.message;
+	return typeof message === 'string' ? message : undefined;
 }
 
 function isNotFoundError(error: unknown): boolean {
@@ -193,11 +221,24 @@ export class SelectwinTrigger implements INodeType {
 				const webhookUrl = this.getNodeWebhookUrl('default');
 				const events = this.getNodeParameter('events') as string[];
 
+				// The Selectwin API only registers https:// endpoints, so fail early
+				// with an actionable message when this n8n instance produces an
+				// http:// webhook URL (the default on a local/Docker install).
+				if (!webhookUrl?.startsWith('https://')) {
+					throw new NodeOperationError(
+						this.getNode(),
+						'The Selectwin API only accepts https:// webhook endpoints, but this n8n instance generates an http:// webhook URL',
+						{
+							description:
+								`Current webhook URL: ${webhookUrl ?? '(none)'}. Set n8n's WEBHOOK_URL environment variable to a public https URL that reaches this instance (for example an HTTPS tunnel), restart n8n and activate the workflow again.`,
+						},
+					);
+				}
+
 				const baseUrl = await getBaseUrl.call(this);
-				const response = (await this.helpers.httpRequestWithAuthentication.call(
-					this,
-					'selectwinApi',
-					{
+				let response: IDataObject;
+				try {
+					response = (await this.helpers.httpRequestWithAuthentication.call(this, 'selectwinApi', {
 						method: 'POST',
 						url: `${baseUrl}/v1/webhooks`,
 						headers: { 'X-Idempotency-Key': randomUUID() },
@@ -207,10 +248,25 @@ export class SelectwinTrigger implements INodeType {
 							events,
 						},
 						json: true,
-					},
-				)) as IDataObject;
+					})) as IDataObject;
+				} catch (error) {
+					const message = extractApiErrorMessage(error);
+					if (message) {
+						throw new NodeOperationError(
+							this.getNode(),
+							`Selectwin refused to register the webhook: ${message}`,
+						);
+					}
+					throw error;
+				}
 
 				const webhook = ((response.data as IDataObject) ?? response) as IDataObject;
+				if (!webhook.id || !webhook.secret) {
+					throw new NodeOperationError(
+						this.getNode(),
+						'Unexpected response from POST /v1/webhooks: missing id or secret',
+					);
+				}
 				staticData.webhookId = webhook.id;
 				staticData.webhookSecret = webhook.secret;
 				return true;

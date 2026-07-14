@@ -1,0 +1,30 @@
+# e2e harness: n8n + mock of the Selectwin public API
+services:
+  mock-api:
+    build: ./mock-api
+    environment:
+      - PORT=3999
+      # Deliveries to endpoints registered under the https e2e host are rewritten
+      # to the n8n container address (the API is https-only; docker net is http).
+      - DELIVERY_REWRITE_FROM=https://n8n.e2e.local
+      - DELIVERY_REWRITE_TO=http://n8n:5678
+    ports:
+      - "3999:3999"
+
+  n8n:
+    build: ./n8n
+    depends_on:
+      - mock-api
+    environment:
+      - N8N_SECURE_COOKIE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_RUNNERS_ENABLED=true
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      # Empty (default) reproduces the real-world failure: n8n generates an
+      # http://localhost:5678/... webhook URL and the API refuses to register it.
+      # Scenario B sets E2E_WEBHOOK_URL=https://n8n.e2e.local/ before `up`.
+      - WEBHOOK_URL=${E2E_WEBHOOK_URL:-}
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./fixtures:/fixtures:ro
