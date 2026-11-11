@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey, sendJsonBody } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath, sendJsonBody } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 export const couponOperations: INodeProperties[] = [
@@ -27,7 +27,7 @@ export const couponOperations: INodeProperties[] = [
 				action: 'Get a coupon',
 				description: 'Retrieve a single coupon by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/coupons/{{$parameter.couponId}}' },
+					request: { method: 'GET', url: '=/v1/coupons/{{encodeURIComponent($parameter.couponId)}}' },
 				},
 			},
 			{
@@ -57,6 +57,7 @@ export const couponFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the coupon',
 		displayOptions: { show: { resource: ['coupon'], operation: ['get'] } },
 	},

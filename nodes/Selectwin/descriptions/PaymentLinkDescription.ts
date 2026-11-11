@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey, buildPaymentLinkBody } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath, buildPaymentLinkBody } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 export const paymentLinkOperations: INodeProperties[] = [
@@ -30,7 +30,7 @@ export const paymentLinkOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '=/v1/checkouts/payment-links/{{$parameter.paymentLinkId}}',
+						url: '=/v1/checkouts/payment-links/{{encodeURIComponent($parameter.paymentLinkId)}}',
 					},
 				},
 			},
@@ -49,7 +49,7 @@ export const paymentLinkOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'PATCH',
-						url: '=/v1/checkouts/payment-links/{{$parameter.paymentLinkId}}',
+						url: '=/v1/checkouts/payment-links/{{encodeURIComponent($parameter.paymentLinkId)}}',
 					},
 				},
 			},
@@ -61,7 +61,7 @@ export const paymentLinkOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'DELETE',
-						url: '=/v1/checkouts/payment-links/{{$parameter.paymentLinkId}}',
+						url: '=/v1/checkouts/payment-links/{{encodeURIComponent($parameter.paymentLinkId)}}',
 					},
 				},
 			},
@@ -143,6 +143,7 @@ export const paymentLinkFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the payment link',
 		displayOptions: {
 			show: { resource: ['paymentLink'], operation: ['get', 'update', 'delete'] },

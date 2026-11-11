@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey, mergeAdditionalFields, sendJsonBody } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath, mergeAdditionalFields, sendJsonBody } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 export const productOperations: INodeProperties[] = [
@@ -27,7 +27,7 @@ export const productOperations: INodeProperties[] = [
 				action: 'Get a product',
 				description: 'Retrieve a single product by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/products/{{$parameter.productId}}' },
+					request: { method: 'GET', url: '=/v1/products/{{encodeURIComponent($parameter.productId)}}' },
 				},
 			},
 			{
@@ -43,7 +43,7 @@ export const productOperations: INodeProperties[] = [
 				action: 'Update a product',
 				description: 'Partially update a product',
 				routing: {
-					request: { method: 'PATCH', url: '=/v1/products/{{$parameter.productId}}' },
+					request: { method: 'PATCH', url: '=/v1/products/{{encodeURIComponent($parameter.productId)}}' },
 					send: { preSend: [sendJsonBody] },
 				},
 			},
@@ -53,7 +53,7 @@ export const productOperations: INodeProperties[] = [
 				action: 'Delete a product',
 				description: 'Delete a product',
 				routing: {
-					request: { method: 'DELETE', url: '=/v1/products/{{$parameter.productId}}' },
+					request: { method: 'DELETE', url: '=/v1/products/{{encodeURIComponent($parameter.productId)}}' },
 				},
 			},
 		],
@@ -94,6 +94,7 @@ export const productFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the product (prd_…)',
 		displayOptions: {
 			show: { resource: ['product'], operation: ['get', 'update', 'delete'] },

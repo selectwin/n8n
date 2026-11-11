@@ -1,5 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
+import { assertSafePath } from '../GenericFunctions';
+
 import { paginationFields } from './shared';
 
 // ----------------------------------
@@ -51,7 +53,7 @@ export const receivableOperations: INodeProperties[] = [
 				action: 'Get a receivable',
 				description: 'Retrieve a single receivable by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/receivables/{{$parameter.receivableId}}' },
+					request: { method: 'GET', url: '=/v1/receivables/{{encodeURIComponent($parameter.receivableId)}}' },
 				},
 			},
 			{
@@ -73,6 +75,7 @@ export const receivableFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the receivable',
 		displayOptions: { show: { resource: ['receivable'], operation: ['get'] } },
 	},
@@ -96,7 +99,7 @@ export const withdrawalOperations: INodeProperties[] = [
 				action: 'Get a withdrawal',
 				description: 'Retrieve a single withdrawal by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/withdrawals/{{$parameter.withdrawalId}}' },
+					request: { method: 'GET', url: '=/v1/withdrawals/{{encodeURIComponent($parameter.withdrawalId)}}' },
 				},
 			},
 			{
@@ -118,6 +121,7 @@ export const withdrawalFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the withdrawal',
 		displayOptions: { show: { resource: ['withdrawal'], operation: ['get'] } },
 	},

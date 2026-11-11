@@ -1,5 +1,7 @@
 import type { INodeProperties } from 'n8n-workflow';
 
+import { assertSafePath } from '../GenericFunctions';
+
 import { paginationFields } from './shared';
 
 export const variantOperations: INodeProperties[] = [
@@ -16,7 +18,7 @@ export const variantOperations: INodeProperties[] = [
 				action: 'Get a variant',
 				description: 'Retrieve a single variant by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/variants/{{$parameter.variantId}}' },
+					request: { method: 'GET', url: '=/v1/variants/{{encodeURIComponent($parameter.variantId)}}' },
 				},
 			},
 			{
@@ -32,7 +34,7 @@ export const variantOperations: INodeProperties[] = [
 				action: 'Get many variants of a product',
 				description: 'List the variants of one product',
 				routing: {
-					request: { method: 'GET', url: '=/v1/products/{{$parameter.productId}}/variants' },
+					request: { method: 'GET', url: '=/v1/products/{{encodeURIComponent($parameter.productId)}}/variants' },
 				},
 			},
 		],
@@ -47,6 +49,7 @@ export const variantFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the variant (var_…)',
 		displayOptions: { show: { resource: ['variant'], operation: ['get'] } },
 	},
@@ -56,6 +59,7 @@ export const variantFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the product (prd_…) whose variants to list',
 		displayOptions: { show: { resource: ['variant'], operation: ['getAllByProduct'] } },
 	},

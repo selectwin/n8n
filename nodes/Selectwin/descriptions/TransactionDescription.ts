@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey, buildTransactionBody } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath, buildTransactionBody } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 export const transactionOperations: INodeProperties[] = [
@@ -27,7 +27,7 @@ export const transactionOperations: INodeProperties[] = [
 				action: 'Get a transaction',
 				description: 'Retrieve a single transaction by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/transactions/{{$parameter.transactionId}}' },
+					request: { method: 'GET', url: '=/v1/transactions/{{encodeURIComponent($parameter.transactionId)}}' },
 				},
 			},
 			{
@@ -45,7 +45,7 @@ export const transactionOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/v1/transactions/{{$parameter.transactionId}}/refund',
+						url: '=/v1/transactions/{{encodeURIComponent($parameter.transactionId)}}/refund',
 					},
 					send: { preSend: [addIdempotencyKey] },
 				},
@@ -58,7 +58,7 @@ export const transactionOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/v1/transactions/{{$parameter.transactionId}}/capture',
+						url: '=/v1/transactions/{{encodeURIComponent($parameter.transactionId)}}/capture',
 					},
 					send: { preSend: [addIdempotencyKey] },
 				},
@@ -230,6 +230,7 @@ export const transactionFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the transaction (tra_…)',
 		displayOptions: {
 			show: { resource: ['transaction'], operation: ['get', 'refund', 'capture'] },

@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey, sendJsonBody } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath, sendJsonBody } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 export const checkoutSessionOperations: INodeProperties[] = [
@@ -28,7 +28,7 @@ export const checkoutSessionOperations: INodeProperties[] = [
 				action: 'Get a checkout session',
 				description: 'Retrieve a single checkout session by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/checkouts/sessions/{{$parameter.sessionId}}' },
+					request: { method: 'GET', url: '=/v1/checkouts/sessions/{{encodeURIComponent($parameter.sessionId)}}' },
 				},
 			},
 			{
@@ -59,6 +59,7 @@ export const checkoutSessionFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the checkout session',
 		displayOptions: { show: { resource: ['checkoutSession'], operation: ['get'] } },
 	},

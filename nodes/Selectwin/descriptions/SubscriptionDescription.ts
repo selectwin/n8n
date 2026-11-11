@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 export const subscriptionOperations: INodeProperties[] = [
@@ -19,7 +19,7 @@ export const subscriptionOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'GET',
-						url: '=/v1/subscriptions/{{$parameter.subscriptionId}}',
+						url: '=/v1/subscriptions/{{encodeURIComponent($parameter.subscriptionId)}}',
 					},
 				},
 			},
@@ -38,7 +38,7 @@ export const subscriptionOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/v1/subscriptions/{{$parameter.subscriptionId}}/cancel',
+						url: '=/v1/subscriptions/{{encodeURIComponent($parameter.subscriptionId)}}/cancel',
 					},
 					send: { preSend: [addIdempotencyKey] },
 				},
@@ -51,7 +51,7 @@ export const subscriptionOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/v1/subscriptions/{{$parameter.subscriptionId}}/pause',
+						url: '=/v1/subscriptions/{{encodeURIComponent($parameter.subscriptionId)}}/pause',
 					},
 					send: { preSend: [addIdempotencyKey] },
 				},
@@ -64,7 +64,7 @@ export const subscriptionOperations: INodeProperties[] = [
 				routing: {
 					request: {
 						method: 'POST',
-						url: '=/v1/subscriptions/{{$parameter.subscriptionId}}/resume',
+						url: '=/v1/subscriptions/{{encodeURIComponent($parameter.subscriptionId)}}/resume',
 					},
 					send: { preSend: [addIdempotencyKey] },
 				},
@@ -81,6 +81,7 @@ export const subscriptionFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the subscription (sub_…)',
 		displayOptions: {
 			show: { resource: ['subscription'], operation: ['get', 'cancel', 'pause', 'resume'] },

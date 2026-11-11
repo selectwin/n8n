@@ -65,6 +65,10 @@ The environment is decided by the key prefix, not the URL. The credential test c
 List operations page with `Limit`/`Offset`; the API answers with a
 `{ data[], hasMore, total, page }` envelope.
 
+IDs are safe to map from upstream data (a form, a webhook): every ID that goes into a URL is encoded, so it can
+never reach another endpoint, and an empty ID, `.` or `..` stops the item with *Invalid ID* instead of being sent.
+The JSON fields (`Additional Fields`, `Metadata`) ignore `__proto__`, `constructor` and `prototype` keys.
+
 ## The Selectwin Trigger
 
 Pick one or more events from the full API catalog (`transaction.approved`,

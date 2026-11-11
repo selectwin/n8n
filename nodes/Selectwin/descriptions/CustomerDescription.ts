@@ -1,6 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
-import { addIdempotencyKey } from '../GenericFunctions';
+import { addIdempotencyKey, assertSafePath } from '../GenericFunctions';
 import { paginationFields } from './shared';
 
 const JSON_OBJECT_VALUE =
@@ -30,7 +30,7 @@ export const customerOperations: INodeProperties[] = [
 				action: 'Get a customer',
 				description: 'Retrieve a single customer by ID',
 				routing: {
-					request: { method: 'GET', url: '=/v1/customers/{{$parameter.customerId}}' },
+					request: { method: 'GET', url: '=/v1/customers/{{encodeURIComponent($parameter.customerId)}}' },
 				},
 			},
 			{
@@ -46,7 +46,7 @@ export const customerOperations: INodeProperties[] = [
 				action: 'Update a customer',
 				description: 'Partially update a customer',
 				routing: {
-					request: { method: 'PATCH', url: '=/v1/customers/{{$parameter.customerId}}' },
+					request: { method: 'PATCH', url: '=/v1/customers/{{encodeURIComponent($parameter.customerId)}}' },
 				},
 			},
 			{
@@ -55,7 +55,7 @@ export const customerOperations: INodeProperties[] = [
 				action: 'Delete a customer',
 				description: 'Delete a customer',
 				routing: {
-					request: { method: 'DELETE', url: '=/v1/customers/{{$parameter.customerId}}' },
+					request: { method: 'DELETE', url: '=/v1/customers/{{encodeURIComponent($parameter.customerId)}}' },
 				},
 			},
 		],
@@ -186,6 +186,7 @@ export const customerFields: INodeProperties[] = [
 		type: 'string',
 		required: true,
 		default: '',
+		routing: { send: { preSend: [assertSafePath] } },
 		description: 'ID of the customer (cus_…)',
 		displayOptions: {
 			show: { resource: ['customer'], operation: ['get', 'update', 'delete'] },

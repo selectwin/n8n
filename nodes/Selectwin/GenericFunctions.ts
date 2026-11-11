@@ -34,9 +34,17 @@ function parseJsonParameter(
 	);
 }
 
+/**
+ * Keys that would reach an object's prototype instead of its own data. A JSON parameter can carry them as own keys
+ * (`JSON.parse('{"__proto__": {...}}')`), and merging `__proto__` into a plain object recursed into
+ * `Object.prototype` — polluting every object of the n8n process (security sweep 31, N-2).
+ */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /** Recursively merge `source` into `target` (source wins on leaf conflicts). */
-function mergeDeep(target: IDataObject, source: IDataObject): IDataObject {
+export function mergeDeep(target: IDataObject, source: IDataObject): IDataObject {
 	for (const [key, value] of Object.entries(source)) {
+		if (UNSAFE_KEYS.has(key)) continue;
 		const existing = target[key];
 		if (
 			value !== null &&
@@ -52,6 +60,41 @@ function mergeDeep(target: IDataObject, source: IDataObject): IDataObject {
 		}
 	}
 	return target;
+}
+
+/**
+ * preSend on every ID property that goes into a URL path: the request must stay on the operation the node chose.
+ *
+ * The URL templates encode the IDs (`encodeURIComponent`), which neutralizes `/`, `?`, `#` and `\`. Before that, an
+ * ID that came from upstream data (a form, a webhook) was pasted raw: "Cancel subscription" with
+ * `../transactions/tra_x/refund#` became POST /v1/transactions/tra_x/refund — a full refund (security sweep 31, N-1).
+ * A `.` or `..` segment survives the encoding and the URL parser resolves it, and an empty ID turns "get one" into
+ * "list all", so those are refused here. No Selectwin ID is empty, `.` or `..`.
+ */
+export async function assertSafePath(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	if (!isSafeApiPath(String(requestOptions.url ?? ''))) {
+		throw new NodeOperationError(
+			this.getNode(),
+			'Invalid ID: an ID cannot be empty, "." or ".." (the request would reach another endpoint)',
+		);
+	}
+	return requestOptions;
+}
+
+/**
+ * An API path whose every segment is a real one: no empty, `.`/`..` (or `%2e` forms), no raw `?#\`. The origin, if
+ * the URL carries one, is cut as TEXT — parsing it would resolve the very dot segments this looks for.
+ */
+export function isSafeApiPath(url: string): boolean {
+	const path = url.replace(/^https?:\/\/[^/?#\\]+/i, '');
+	if (!path.startsWith('/') || /[?#\\]/.test(path)) return false;
+	return path
+		.slice(1)
+		.split('/')
+		.every((segment) => segment !== '' && !/^(?:\.|%2e){1,2}$/i.test(segment));
 }
 
 /**
